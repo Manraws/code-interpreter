@@ -63,18 +63,20 @@ def execute_python_code(code: str) -> dict:
 
 # in bash export GEMINI_API_KEY="someKey"
 # or in powershell $env:GEMINI_API_KEY="YOUR_TOKEN_HERE"
+# in bash export GEMINI_API_KEY="someKey"
+# or in powershell $env:GEMINI_API_KEY="YOUR_TOKEN_HERE"
 
 # AI Error Analysis
 
 import os
+import time
 from pydantic import BaseModel
 from google import genai
-from google.genai import types
+from google.genai import types, errors
 from typing import List
 
 
-
-client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))  # uses GEMINI_API_KEY or GOOGLE_API_KEY env var
+client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 possibleGenModelList = []
 
 for model in client.models.list():
@@ -82,14 +84,23 @@ for model in client.models.list():
         print(model.name)
         possibleGenModelList.append(model.name)
 
+PREFERRED_MODELS = ["models/gemini-2.5-flash", "models/gemini-2.5-flash-lite", "models/gemini-2.0-flash"]
+ACTIVE_MODEL = next((m for m in PREFERRED_MODELS if m in possibleGenModelList),
+                     possibleGenModelList[0] if possibleGenModelList else None)
+print(f"Using model: {ACTIVE_MODEL}")
+
+
 class ErrorAnalysis(BaseModel):
     error_lines: List[int]  # Line numbers with errors
+
 
 def analyze_error_with_ai(code: str, traceback: str) -> List[int]:
     """
     Use LLM with structured output to identify error line numbers.
+    Falls back to [] if Gemini is unavailable or fails.
     """
-    client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
+    if ACTIVE_MODEL is None:
+        return []
 
     prompt = f"""
 Analyze this Python code and its error traceback.
@@ -104,30 +115,37 @@ TRACEBACK:
 Return the line number(s) where the error is located.
 """
 
-    response = client.models.generate_content(
-        # model=possibleGenModelList[0], # take the first model , generating error 
-        model="gemini-3.8-flash",
-        # model='gemini-2.0-flash-exp',
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            response_mime_type="application/json",
-            response_schema=types.Schema(
-                type=types.Type.OBJECT,
-                properties={
-                    "error_lines": types.Schema(
-                        type=types.Type.ARRAY,
-                        items=types.Schema(type=types.Type.INTEGER)
+    max_retries = 2
+    for attempt in range(max_retries + 1):
+        try:
+            response = client.models.generate_content(
+                model=ACTIVE_MODEL,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    response_schema=types.Schema(
+                        type=types.Type.OBJECT,
+                        properties={
+                            "error_lines": types.Schema(
+                                type=types.Type.ARRAY,
+                                items=types.Schema(type=types.Type.INTEGER)
+                            )
+                        },
+                        required=["error_lines"]
                     )
-                },
-                required=["error_lines"]
+                )
             )
-        )
-    )
-
-    result = ErrorAnalysis.model_validate_json(response.text)
-    return result.error_lines
-
-
+            result = ErrorAnalysis.model_validate_json(response.text)
+            return result.error_lines
+        except errors.ServerError as e:
+            print(f"Gemini server error (attempt {attempt + 1}/{max_retries + 1}): {e}")
+            if attempt < max_retries:
+                time.sleep(1.5 * (attempt + 1))
+                continue
+            return []
+        except Exception as e:
+            print(f"analyze_error_with_ai failed: {e}")
+            return []
 
 
 
