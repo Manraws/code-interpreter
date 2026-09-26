@@ -10,6 +10,18 @@ from pydantic import BaseModel
 
 app = FastAPI()
 
+
+
+#enable cors
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # or your specific frontend origin
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # to exec the code from request
 
 # Tool Function (execute_python_code)
