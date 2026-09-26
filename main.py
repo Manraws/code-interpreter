@@ -129,6 +129,10 @@ TRACEBACK:
 {traceback}
 
 Return the line number(s) where the error is located.
+Identify ONLY the single line number where the exception was actually raised —
+the deepest frame in the traceback, not any calling lines higher up the call stack.
+Return exactly one line number in error_lines, not the full call chain.
+
 """
 
     max_retries = 2
