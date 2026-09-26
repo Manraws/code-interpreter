@@ -84,7 +84,7 @@ for model in client.models.list():
         print(model.name)
         possibleGenModelList.append(model.name)
 
-PREFERRED_MODELS = ["models/gemini-2.5-flash", "models/gemini-2.5-flash-lite", "models/gemini-2.0-flash"]
+PREFERRED_MODELS = ["models/gemini-3.8-flash",   "models/gemini-2.5-flash-lite", "models/gemini-2.0-flash"]
 ACTIVE_MODEL = next((m for m in PREFERRED_MODELS if m in possibleGenModelList),
                      possibleGenModelList[0] if possibleGenModelList else None)
 print(f"Using model: {ACTIVE_MODEL}")
