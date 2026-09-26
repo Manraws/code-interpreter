@@ -1,6 +1,6 @@
 
 
-# in bash export AIPIPE_TOKEN="eyJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6InNyeWluc3RpdHV0aW9uc0BnbWFpbC5jb20iLCJpYXQiOjE3OTA0MDg5NjIsImlzcyI6Imh0dHBzOi8vYWlwaXBlLm9yZyIsImF1ZCI6ImFpcGlwZS1hcGkiLCJleHAiOjE3OTEwMTM3NjJ9.bIrOxD3iWBBEGKPFH7a899eXmjyGJnIvJovC9W8vwp0" 
+# in bash export AIPIPE_TOKEN="someKey"
 # or in powershell $env:AIPIPE_TOKEN="YOUR_TOKEN_HERE" 
 
 
@@ -49,7 +49,7 @@ def execute_python_code(code: str) -> dict:
 
 
 
-# in bash export GEMINI_API_KEY="AIzaSyAFPLE6tfveaLxF6FyxeIl1oFi_koIaOno"
+# in bash export GEMINI_API_KEY="someKey"
 # or in powershell $env:GEMINI_API_KEY="YOUR_TOKEN_HERE"
 
 # AI Error Analysis
