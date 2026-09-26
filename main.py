@@ -1,16 +1,23 @@
+# python -m venv .venv
+# source .venv/Scripts/activate  for git bash
+
+# in powershell .\venv\Scripts\Activate.ps1
+# in bash export AIPIPE_TOKEN=""
+# or in powershell $env:AIPIPE_TOKEN=""
 
 
-# in bash export AIPIPE_TOKEN="someKey"
-# or in powershell $env:AIPIPE_TOKEN="YOUR_TOKEN_HERE" 
+# uvicorn main:app --reload
 
+#render url
+# https://code-interpreter-v9zv.onrender.com/code-interpreter
+
+#ngrok Preethi https://glutton-accompany-valiant.ngrok-free.dev
 
 
 from fastapi import FastAPI
 from pydantic import BaseModel
 
 app = FastAPI()
-
-
 
 #enable cors
 from fastapi.middleware.cors import CORSMiddleware
@@ -61,8 +68,9 @@ def execute_python_code(code: str) -> dict:
 
 
 
-# in bash export GEMINI_API_KEY="someKey"
-# or in powershell $env:GEMINI_API_KEY="YOUR_TOKEN_HERE"
+# in bash export GEMINI_API_KEY=""
+# or in powershell $env:GEMINI_API_KEY=""
+
 # in bash export GEMINI_API_KEY="someKey"
 # or in powershell $env:GEMINI_API_KEY="YOUR_TOKEN_HERE"
 
@@ -90,6 +98,14 @@ ACTIVE_MODEL = next((m for m in PREFERRED_MODELS if m in possibleGenModelList),
 print(f"Using model: {ACTIVE_MODEL}")
 
 
+import re
+
+def extract_line_from_traceback(traceback_str: str) -> List[int]:
+    """Fallback: parse line number directly from Python's own traceback.
+    Returns only the innermost (deepest) frame — where the error actually occurred."""
+    matches = re.findall(r'File "<string>", line (\d+)', traceback_str)
+    return [int(matches[-1])] if matches else []
+
 class ErrorAnalysis(BaseModel):
     error_lines: List[int]  # Line numbers with errors
 
@@ -100,7 +116,7 @@ def analyze_error_with_ai(code: str, traceback: str) -> List[int]:
     Falls back to [] if Gemini is unavailable or fails.
     """
     if ACTIVE_MODEL is None:
-        return []
+        return extract_line_from_traceback(traceback)
 
     prompt = f"""
 Analyze this Python code and its error traceback.
@@ -142,11 +158,10 @@ Return the line number(s) where the error is located.
             if attempt < max_retries:
                 time.sleep(1.5 * (attempt + 1))
                 continue
-            return []
+            return extract_line_from_traceback(traceback)
         except Exception as e:
             print(f"analyze_error_with_ai failed: {e}")
-            return []
-
+            return extract_line_from_traceback(traceback)
 
 
 # basic app to capture request
